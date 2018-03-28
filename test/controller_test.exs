@@ -87,6 +87,56 @@ defmodule ControllerTest do
     assert (CurrentTransactions.all(:transactions_agent) |> Kernel.length) == 0
   end
 
+  test "new_block generates previous_hash if not provided" do
+    proof1 = 100
+    previous_hash1 = "n/a"
+    # Push the genesis block
+    block1 = Controller.new_block(
+      :blocks_agent,
+      :transactions_agent,
+      proof1,
+      previous_hash1)
+
+    # Push the transactions block
+    proof2 = 200
+    transaction1 = %BlockTransaction{
+      sender: "sender1",
+      recipient: "recipient1",
+      amount: 123,
+    }
+
+    transaction2 = %BlockTransaction{
+      sender: "sender1",
+      recipient: "recipient1",
+      amount: 234,
+    }
+    CurrentTransactions.push(:transactions_agent, transaction1)
+    CurrentTransactions.push(:transactions_agent, transaction2)
+    Controller.new_block(:blocks_agent, :transactions_agent, proof2)
+
+    # Assertions
+    expected_previous_hash1 = Controller.hash(block1)
+    agent_blocks = CurrentBlocks.all(:blocks_agent) |> nullify_timestamps()
+
+    assert agent_blocks == [
+      %Block{
+        index: 0,
+        transactions: [],
+        proof: proof1,
+        previous_hash: "n/a"
+      },
+      %Block{
+        index: 1,
+        transactions: [transaction1, transaction2],
+        proof: proof2,
+        previous_hash: expected_previous_hash1
+      }
+    ]
+
+    latest_block = CurrentBlocks.last(:blocks_agent)
+    assert latest_block.previous_hash == expected_previous_hash1
+  end
+
   defp nullify_timestamps(blocks) do
     Enum.map(blocks, fn block ->
       %{block | timestamp: nil}

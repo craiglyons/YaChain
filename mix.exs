@@ -24,6 +24,7 @@ defmodule Yachain.MixProject do
       {:cowboy, "~> 1.0.0"},
       {:plug, "~> 1.0"},
       {:exactor, "~> 2.2"},
+      {:poison, "~> 3.1"},
     ]
   end
 end
