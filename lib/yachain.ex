@@ -6,7 +6,6 @@ defmodule Yachain do
   """
 
   def start(_type, _args) do
-    IO.puts("*** starting ***")
     children = [
       # Plug.Adapters.Cowboy.child_spec(:http, Yachain.Controller, [], port: 8080),
       Yachain.CurrentTransactions,

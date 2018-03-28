@@ -1,6 +1,8 @@
 defmodule Yachain.CurrentBlocks do
   use Agent
 
+  @name __MODULE__
+
   @doc """
   Starts a new list of blocks.
   """
@@ -11,29 +13,29 @@ defmodule Yachain.CurrentBlocks do
   @doc """
   Gets all blocks in the list w/ identity function
   """
-  def all() do
-    Agent.get(__MODULE__, &(&1))
+  def all(name \\ @name) do
+    Agent.get(name, &(&1))
   end
 
   @doc """
   Gets the last block in the list.
   """
-  def last() do
-    Agent.get(__MODULE__, &List.last(&1))
+  def last(name \\ @name) do
+    Agent.get(name, &List.last(&1))
   end
 
   @doc """
   Pushes the value `value` on the end of the list.
   """
-  def push(value) do
-    Agent.update(__MODULE__, &Kernel.++(&1, [value]))
+  def push(name \\ @name, value) do
+    Agent.update(name, &Kernel.++(&1, [value]))
   end
 
   @doc """
   Replaces the current list with `list`
   """
-  def replace(list) do
-    Agent.update(__MODULE__, fn current -> list end)
+  def replace(name \\ @name, list) do
+    Agent.update(name, fn current -> list end)
   end
 
 end
