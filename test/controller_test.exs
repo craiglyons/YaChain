@@ -38,7 +38,7 @@ defmodule ControllerTest do
     :ok
   end
 
-  test "adds a new gensis block" do
+  test "new_block adds a new gensis block" do
     proof1 = 100
     previous_hash1 = "1"
 
@@ -53,30 +53,38 @@ defmodule ControllerTest do
       }]
   end
 
-  test "adds a post-gensis block" do
+  test "new_block adds current transactions to the block & clears them" do
     proof1 = 100
-    proof2 = 200
     previous_hash1 = "prevhash1"
-    previous_hash2 = "prevhash2"
+
+    transaction1 = %BlockTransaction{
+      sender: "sender1",
+      recipient: "recipient1",
+      amount: 123,
+    }
+    transaction2 = %BlockTransaction{
+      sender: "sender1",
+      recipient: "recipient1",
+      amount: 234,
+    }
+
+    CurrentTransactions.push(:transactions_agent, transaction1)
+    CurrentTransactions.push(:transactions_agent, transaction2)
+    assert (CurrentTransactions.all(:transactions_agent) |> Kernel.length) == 2
 
     Controller.new_block(:blocks_agent, :transactions_agent, proof1, previous_hash1)
-    Controller.new_block(:blocks_agent, :transactions_agent, proof2, previous_hash2)
 
     agent_blocks = CurrentBlocks.all(:blocks_agent) |> nullify_timestamps()
     assert agent_blocks == [
       %Block{
         index: 0,
-        transactions: [],
+        transactions: [transaction1, transaction2],
         proof: proof1,
         previous_hash: previous_hash1
-      },
-      %Block{
-        index: 1,
-        transactions: [],
-        proof: proof2,
-        previous_hash: previous_hash2
-      },
+      }
     ]
+
+    assert (CurrentTransactions.all(:transactions_agent) |> Kernel.length) == 0
   end
 
   defp nullify_timestamps(blocks) do

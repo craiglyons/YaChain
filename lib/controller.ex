@@ -27,7 +27,7 @@ defmodule Yachain.Controller do
       previous_hash: previous_hash,
     }
 
-    CurrentTransactions.clear()
+    CurrentTransactions.clear(transactions_agent)
     CurrentBlocks.push(blocks_agent, block)
     block
   end
