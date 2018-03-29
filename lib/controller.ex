@@ -1,5 +1,6 @@
 defmodule Yachain.Controller do
   alias Yachain.Block
+  alias Yachain.BlockTransaction
   alias Yachain.CurrentTransactions
   alias Yachain.CurrentBlocks
   # import Plug.Conn
@@ -41,10 +42,28 @@ defmodule Yachain.Controller do
     new_block(blocks_agent, transactions_agent, the_proof, previous_hash)
   end
 
+  def new_transaction(
+        blocks_agent \\ CurrentBlocks,
+        transactions_agent \\ CurrentTransactions,
+        sender,
+        recipient,
+        amount) do
+
+    CurrentTransactions.push(
+      transactions_agent,
+      %BlockTransaction{
+        sender: sender,
+        recipient: recipient,
+        amount: amount,
+      })
+
+    CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
+  end
+
   def hash(block) do
     # Naiively rely on struct key sorting
     json_block = Poison.encode!(block)
-    hashed = :crypto.hash(:sha256, "whatever") |> Base.encode16
+    :crypto.hash(:sha256, json_block) |> Base.encode16
   end
 
 end

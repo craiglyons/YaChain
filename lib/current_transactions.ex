@@ -25,7 +25,7 @@ defmodule Yachain.CurrentTransactions do
   end
 
   @doc """
-  Pushes the value `value` on the end of the list.
+  Pushes `value` on the end of the list.
   """
   def push(name \\ @name, value) do
     Agent.update(name, &Kernel.++(&1, [value]))
