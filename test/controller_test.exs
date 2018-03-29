@@ -166,6 +166,16 @@ defmodule ControllerTest do
     ]
   end
 
+
+  test "calculates accurate proofs of work" do
+    proof = Controller.proof_of_work(1)
+    assert proof == 72608
+    proof = Controller.proof_of_work(12345)
+    assert proof == 18083
+    proof = Controller.proof_of_work(12346)
+    assert proof == 2594
+  end
+
   defp insert_genesis_block() do
     proof1 = 100
     previous_hash1 = "n/a"

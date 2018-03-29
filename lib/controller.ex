@@ -60,6 +60,29 @@ defmodule Yachain.Controller do
     CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
   end
 
+  def proof_of_work(last_proof, proof \\ 0) do
+    case valid_proof(last_proof, proof) do
+      true ->
+        proof
+      false ->
+        proof_of_work(last_proof, proof + 1)
+    end
+  end
+
+  defp valid_proof(last_proof, proof) do
+    guess = Integer.to_string(last_proof) <> Integer.to_string(proof)
+    guess_hash = :crypto.hash(:sha256, guess) |> Base.encode16
+    String.slice(guess_hash, 0, 4) |> valid_proof()
+  end
+
+  defp valid_proof("0000") do
+    true
+  end
+
+  defp valid_proof(_nonzero) do
+    false
+  end
+
   def hash(block) do
     # Naiively rely on struct key sorting
     json_block = Poison.encode!(block)
