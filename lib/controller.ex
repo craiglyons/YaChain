@@ -56,7 +56,6 @@ defmodule Yachain.Controller do
         recipient: recipient,
         amount: amount,
       })
-
     CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
   end
 
@@ -89,4 +88,19 @@ defmodule Yachain.Controller do
     :crypto.hash(:sha256, json_block) |> Base.encode16
   end
 
+  def mine(blocks_agent, transactions_agent) do
+    last_block = CurrentBlocks.last(blocks_agent)
+    last_proof = last_block.proof
+    proof = proof_of_work(last_proof)
+
+    new_transaction(
+      blocks_agent,
+      transactions_agent,
+      "0",
+      Node.self,
+      1)
+
+    previous_hash = hash(last_block)
+    block = new_block(blocks_agent, transactions_agent, proof, previous_hash)
+  end
 end

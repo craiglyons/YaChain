@@ -176,6 +176,37 @@ defmodule ControllerTest do
     assert proof == 2594
   end
 
+  test "mining creates a new transaction & log" do
+    block1 = insert_genesis_block()
+    expected_previous_hash1 = Controller.hash(block1)
+
+    Controller.mine(:blocks_agent, :transactions_agent)
+
+    expected_blocks = [
+      %Block{
+        index: 0,
+        previous_hash: "n/a",
+        proof: 100,
+        transactions: [],
+      },
+      %Block{
+        index: 1,
+        previous_hash: expected_previous_hash1,
+        proof: 35293,
+        transactions: [
+          %BlockTransaction{
+            amount: 1,
+            recipient: :nonode@nohost,
+            sender: "0"
+          },
+        ],
+      },
+    ]
+
+    actual_blocks = CurrentBlocks.all(:blocks_agent) |> nullify_timestamps()
+    assert expected_blocks == actual_blocks
+  end
+
   defp insert_genesis_block() do
     proof1 = 100
     previous_hash1 = "n/a"
