@@ -88,7 +88,7 @@ defmodule ControllerTest do
   end
 
   test "new_block generates previous_hash if not provided" do
-    block1 = insert_genesis_block()
+    block0 = insert_genesis_block()
     # Push the transactions block
     proof2 = 200
     transaction1 = %BlockTransaction{
@@ -107,7 +107,7 @@ defmodule ControllerTest do
     Controller.new_block(:blocks_agent, :transactions_agent, proof2)
 
     # Assertions
-    expected_previous_hash1 = Controller.hash(block1)
+    expected_previous_hash1 = Controller.hash(block0)
     agent_blocks = CurrentBlocks.all(:blocks_agent) |> nullify_timestamps()
 
     assert agent_blocks == [
@@ -177,18 +177,13 @@ defmodule ControllerTest do
   end
 
   test "mining creates a new transaction & log" do
-    block1 = insert_genesis_block()
-    expected_previous_hash1 = Controller.hash(block1)
+    block0 = insert_genesis_block()
+    expected_previous_hash1 = Controller.hash(block0)
 
     Controller.mine(:blocks_agent, :transactions_agent)
 
     expected_blocks = [
-      %Block{
-        index: 0,
-        previous_hash: "n/a",
-        proof: 100,
-        transactions: [],
-      },
+      block0,
       %Block{
         index: 1,
         previous_hash: expected_previous_hash1,
@@ -201,10 +196,79 @@ defmodule ControllerTest do
           },
         ],
       },
-    ]
+    ] |> nullify_timestamps()
 
     actual_blocks = CurrentBlocks.all(:blocks_agent) |> nullify_timestamps()
     assert expected_blocks == actual_blocks
+  end
+
+  test "valid_chain? reports true for an valid chain" do
+    block0 = insert_genesis_block()
+
+    proof1 = Controller.proof_of_work(block0.proof)
+    previous_hash1 = Controller.hash(block0)
+    block1 = Controller.new_block(:blocks_agent, :transactions_agent, proof1, previous_hash1)
+
+    proof2 = Controller.proof_of_work(block1.proof)
+    previous_hash2 = Controller.hash(block1)
+    block2 = Controller.new_block(:blocks_agent, :transactions_agent, proof2, previous_hash2)
+
+    proof3 = Controller.proof_of_work(block2.proof)
+    previous_hash3 = Controller.hash(block2)
+    block3 = Controller.new_block(:blocks_agent, :transactions_agent, proof3, previous_hash3)
+
+    proof4 = Controller.proof_of_work(block3.proof)
+    previous_hash4 = Controller.hash(block3)
+    block4 = Controller.new_block(:blocks_agent, :transactions_agent, proof4, previous_hash4)
+
+    chain = [block0, block1, block2, block3, block4]
+    assert Controller.valid_chain?(chain) == true
+  end
+
+  test "valid_chain? reports false for a chain with a conflicting hash" do
+    block0 = insert_genesis_block()
+
+    proof1 = Controller.proof_of_work(block0.proof)
+    previous_hash1 = Controller.hash(block0)
+    block1 = Controller.new_block(:blocks_agent, :transactions_agent, proof1, previous_hash1)
+
+    proof2 = Controller.proof_of_work(block1.proof)
+    previous_hash2 = Controller.hash(block1)
+    block2 = Controller.new_block(:blocks_agent, :transactions_agent, proof2, previous_hash2)
+
+    proof3 = Controller.proof_of_work(block2.proof)
+    previous_hash3 = "not a real hash"
+    block3 = Controller.new_block(:blocks_agent, :transactions_agent, proof3, previous_hash3)
+
+    proof4 = Controller.proof_of_work(block3.proof)
+    previous_hash4 = Controller.hash(block3)
+    block4 = Controller.new_block(:blocks_agent, :transactions_agent, proof4, previous_hash4)
+
+    chain = [block0, block1, block2, block3, block4]
+    assert Controller.valid_chain?(chain) == false
+  end
+
+  test "valid_chain? reports false for a chain with a conflicting proof" do
+    block0 = insert_genesis_block()
+
+    proof1 = Controller.proof_of_work(block0.proof)
+    previous_hash1 = Controller.hash(block0)
+    block1 = Controller.new_block(:blocks_agent, :transactions_agent, proof1, previous_hash1)
+
+    proof2 = Controller.proof_of_work(block1.proof)
+    previous_hash2 = Controller.hash(block1)
+    block2 = Controller.new_block(:blocks_agent, :transactions_agent, proof2, previous_hash2)
+
+    proof3 = Controller.proof_of_work(block2.proof)
+    previous_hash3 = Controller.hash(block2)
+    block3 = Controller.new_block(:blocks_agent, :transactions_agent, proof3, previous_hash3)
+
+    proof4 = 12345
+    previous_hash4 = Controller.hash(block3)
+    block4 = Controller.new_block(:blocks_agent, :transactions_agent, proof4, previous_hash4)
+
+    chain = [block0, block1, block2, block3, block4]
+    assert Controller.valid_chain?(chain) == false
   end
 
   defp insert_genesis_block() do

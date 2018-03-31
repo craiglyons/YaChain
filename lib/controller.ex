@@ -103,4 +103,27 @@ defmodule Yachain.Controller do
     previous_hash = hash(last_block)
     block = new_block(blocks_agent, transactions_agent, proof, previous_hash)
   end
+
+  def valid_chain?(chain) do
+    valid_chain?(chain, 0)
+  end
+
+  def valid_chain?(chain, current_index) do
+    chain_length = Kernel.length(chain)
+    previous_block = Enum.at(chain, current_index)
+    current_block = Enum.at(chain, current_index + 1)
+    cond do
+      current_index == chain_length - 1 ->
+        true
+      invalid_block?(previous_block, current_block) ->
+        false
+      true ->
+        valid_chain?(chain, current_index + 1)
+    end
+  end
+
+  defp invalid_block?(previous_block, current_block) do
+    current_block.previous_hash != hash(previous_block) ||
+    !valid_proof(previous_block.proof, current_block.proof)
+  end
 end
