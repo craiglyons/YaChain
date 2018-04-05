@@ -13,6 +13,10 @@ defmodule Yachain.Controller do
   #   |> send_resp(200, "I'm a blockchain\n")
   # end
 
+  def get_chain(blocks_agent \\ CurrentBlocks) do
+    CurrentBlocks.all(blocks_agent)
+  end
+
   def new_block(
         blocks_agent,
         transactions_agent,
@@ -22,7 +26,7 @@ defmodule Yachain.Controller do
     current_transactions = CurrentTransactions.all(transactions_agent)
 
     block = %Block{
-      index: current_blocks |> Kernel.length,
+      index: current_blocks |> length,
       timestamp: DateTime.utc_now,
       transactions: current_transactions,
       proof: proof,
@@ -109,7 +113,7 @@ defmodule Yachain.Controller do
   end
 
   def valid_chain?(chain, current_index) do
-    chain_length = Kernel.length(chain)
+    chain_length = length(chain)
     previous_block = Enum.at(chain, current_index)
     current_block = Enum.at(chain, current_index + 1)
     cond do
@@ -125,5 +129,18 @@ defmodule Yachain.Controller do
   defp invalid_block?(previous_block, current_block) do
     current_block.previous_hash != hash(previous_block) ||
     !valid_proof(previous_block.proof, current_block.proof)
+  end
+
+  def resolve_conflicts() do
+    Node.list()
+    |> Enum.map(Node.spawn(node, &get_chain/0))
+    |> longest_chain()
+  end
+
+  def longest_chain(chains) do
+    chains
+    |> Enum.filter(&valid_chain?/1)
+    |> Enum.sort(&(length(&1) > length(&2)))
+    |> Enum.at(0)
   end
 end
