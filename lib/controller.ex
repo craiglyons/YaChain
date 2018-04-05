@@ -3,18 +3,26 @@ defmodule Yachain.Controller do
   alias Yachain.BlockTransaction
   alias Yachain.CurrentTransactions
   alias Yachain.CurrentBlocks
-  # import Plug.Conn
-
-  # def init(options), do: options
-
-  # def call(conn, _opts) do
-  #   conn
-  #   |> put_resp_content_type("text/plain")
-  #   |> send_resp(200, "I'm a blockchain\n")
-  # end
 
   def get_chain(blocks_agent \\ CurrentBlocks) do
     CurrentBlocks.all(blocks_agent)
+  end
+
+  def new_transaction(
+        blocks_agent \\ CurrentBlocks,
+        transactions_agent \\ CurrentTransactions,
+        sender,
+        recipient,
+        amount) do
+
+    CurrentTransactions.push(
+      transactions_agent,
+      %BlockTransaction{
+        sender: sender,
+        recipient: recipient,
+        amount: amount,
+      })
+    CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
   end
 
   def new_block(
@@ -46,23 +54,6 @@ defmodule Yachain.Controller do
     new_block(blocks_agent, transactions_agent, the_proof, previous_hash)
   end
 
-  def new_transaction(
-        blocks_agent \\ CurrentBlocks,
-        transactions_agent \\ CurrentTransactions,
-        sender,
-        recipient,
-        amount) do
-
-    CurrentTransactions.push(
-      transactions_agent,
-      %BlockTransaction{
-        sender: sender,
-        recipient: recipient,
-        amount: amount,
-      })
-    CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
-  end
-
   def proof_of_work(last_proof, proof \\ 0) do
     case valid_proof(last_proof, proof) do
       true ->
@@ -92,7 +83,10 @@ defmodule Yachain.Controller do
     :crypto.hash(:sha256, json_block) |> Base.encode16
   end
 
-  def mine(blocks_agent, transactions_agent) do
+  def mine(
+        blocks_agent \\ CurrentBlocks,
+        transactions_agent \\ CurrentTransactions
+      ) do
     last_block = CurrentBlocks.last(blocks_agent)
     last_proof = last_block.proof
     proof = proof_of_work(last_proof)
@@ -105,7 +99,7 @@ defmodule Yachain.Controller do
       1)
 
     previous_hash = hash(last_block)
-    block = new_block(blocks_agent, transactions_agent, proof, previous_hash)
+    new_block(blocks_agent, transactions_agent, proof, previous_hash)
   end
 
   def valid_chain?(chain) do
@@ -126,9 +120,22 @@ defmodule Yachain.Controller do
     end
   end
 
+  def insert_genesis_block(
+        blocks_agent \\ CurrentBlocks,
+        transactions_agent \\ CurrentTransactions
+      ) do
+    proof1 = 100
+    previous_hash1 = "n/a"
+    new_block(
+      blocks_agent,
+      transactions_agent,
+      proof1,
+      previous_hash1)
+  end
+
   defp invalid_block?(previous_block, current_block) do
     current_block.previous_hash != hash(previous_block) ||
-    !valid_proof(previous_block.proof, current_block.proof)
+      !valid_proof(previous_block.proof, current_block.proof)
   end
 
   def resolve_conflicts() do

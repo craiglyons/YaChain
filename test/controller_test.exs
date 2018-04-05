@@ -88,7 +88,7 @@ defmodule ControllerTest do
   end
 
   test "new_block generates previous_hash if not provided" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
     # Push the transactions block
     proof2 = 200
     transaction1 = %BlockTransaction{
@@ -132,7 +132,7 @@ defmodule ControllerTest do
 
   test "new_transaction pushes 2 new transactions & returns the indices" do
     # Genesis block is required to get block index in new_transaction function
-    insert_genesis_block()
+    Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
 
     sender1 = "sender1"
     sender2 = "sender2"
@@ -177,7 +177,7 @@ defmodule ControllerTest do
   end
 
   test "mining creates a new transaction & log" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
     expected_previous_hash1 = Controller.hash(block0)
 
     Controller.mine(:blocks_agent, :transactions_agent)
@@ -203,7 +203,7 @@ defmodule ControllerTest do
   end
 
   test "valid_chain? reports true for an valid chain" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
 
     block1 = next_block(block0)
     block2 = next_block(block1)
@@ -215,7 +215,7 @@ defmodule ControllerTest do
   end
 
   test "valid_chain? reports false for a chain with a conflicting hash" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
 
     block1 = next_block(block0)
     block2 = next_block(block1)
@@ -228,7 +228,7 @@ defmodule ControllerTest do
   end
 
   test "valid_chain? reports false for a chain with a conflicting proof" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
 
     block1 = next_block(block0)
     block2 = next_block(block1)
@@ -241,7 +241,7 @@ defmodule ControllerTest do
   end
 
   test "longest_chain returns the longest chain in a list" do
-    block0 = insert_genesis_block()
+    block0 = Controller.insert_genesis_block(:blocks_agent, :transactions_agent)
 
     block1 = next_block(block0)
     block2 = next_block(block1)
@@ -251,16 +251,6 @@ defmodule ControllerTest do
     chain2 = [ block1, block2, block3 ]
     chain3 = [ block1 ]
     assert Controller.longest_chain([chain1, chain2, chain3]) == chain2
-  end
-
-  defp insert_genesis_block() do
-    proof1 = 100
-    previous_hash1 = "n/a"
-    Controller.new_block(
-      :blocks_agent,
-      :transactions_agent,
-      proof1,
-      previous_hash1)
   end
 
   defp next_block(previous_block) do
