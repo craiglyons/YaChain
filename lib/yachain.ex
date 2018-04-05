@@ -1,6 +1,7 @@
 defmodule Yachain do
   use Application
   require Logger
+
   @moduledoc """
   Documentation for Yachain.
   """

@@ -13,32 +13,27 @@ defmodule Yachain.Controller do
         transactions_agent \\ CurrentTransactions,
         sender,
         recipient,
-        amount) do
+        amount
+      ) do
+    CurrentTransactions.push(transactions_agent, %BlockTransaction{
+      sender: sender,
+      recipient: recipient,
+      amount: amount
+    })
 
-    CurrentTransactions.push(
-      transactions_agent,
-      %BlockTransaction{
-        sender: sender,
-        recipient: recipient,
-        amount: amount,
-      })
     CurrentBlocks.last(blocks_agent) |> Map.fetch!(:index)
   end
 
-  def new_block(
-        blocks_agent,
-        transactions_agent,
-        proof,
-        previous_hash) do
+  def new_block(blocks_agent, transactions_agent, proof, previous_hash) do
     current_blocks = CurrentBlocks.all(blocks_agent)
     current_transactions = CurrentTransactions.all(transactions_agent)
 
     block = %Block{
       index: current_blocks |> length,
-      timestamp: DateTime.utc_now,
+      timestamp: DateTime.utc_now(),
       transactions: current_transactions,
       proof: proof,
-      previous_hash: previous_hash,
+      previous_hash: previous_hash
     }
 
     CurrentTransactions.clear(transactions_agent)
@@ -49,7 +44,8 @@ defmodule Yachain.Controller do
   def new_block(
         blocks_agent \\ CurrentBlocks,
         transactions_agent \\ CurrentTransactions,
-        the_proof) do
+        the_proof
+      ) do
     previous_hash = CurrentBlocks.last(blocks_agent) |> hash()
     new_block(blocks_agent, transactions_agent, the_proof, previous_hash)
   end
@@ -58,6 +54,7 @@ defmodule Yachain.Controller do
     case valid_proof(last_proof, proof) do
       true ->
         proof
+
       false ->
         proof_of_work(last_proof, proof + 1)
     end
@@ -65,7 +62,7 @@ defmodule Yachain.Controller do
 
   defp valid_proof(last_proof, proof) do
     guess = Integer.to_string(last_proof) <> Integer.to_string(proof)
-    guess_hash = :crypto.hash(:sha256, guess) |> Base.encode16
+    guess_hash = :crypto.hash(:sha256, guess) |> Base.encode16()
     String.slice(guess_hash, 0, 4) |> valid_proof()
   end
 
@@ -80,7 +77,7 @@ defmodule Yachain.Controller do
   def hash(block) do
     # Naiively rely on struct key sorting
     json_block = Poison.encode!(block)
-    :crypto.hash(:sha256, json_block) |> Base.encode16
+    :crypto.hash(:sha256, json_block) |> Base.encode16()
   end
 
   def mine(
@@ -91,12 +88,7 @@ defmodule Yachain.Controller do
     last_proof = last_block.proof
     proof = proof_of_work(last_proof)
 
-    new_transaction(
-      blocks_agent,
-      transactions_agent,
-      "0",
-      Node.self,
-      1)
+    new_transaction(blocks_agent, transactions_agent, "0", Node.self(), 1)
 
     previous_hash = hash(last_block)
     new_block(blocks_agent, transactions_agent, proof, previous_hash)
@@ -110,11 +102,14 @@ defmodule Yachain.Controller do
     chain_length = length(chain)
     previous_block = Enum.at(chain, current_index)
     current_block = Enum.at(chain, current_index + 1)
+
     cond do
       current_index == chain_length - 1 ->
         true
+
       invalid_block?(previous_block, current_block) ->
         false
+
       true ->
         valid_chain?(chain, current_index + 1)
     end
@@ -126,11 +121,7 @@ defmodule Yachain.Controller do
       ) do
     proof1 = 100
     previous_hash1 = "n/a"
-    new_block(
-      blocks_agent,
-      transactions_agent,
-      proof1,
-      previous_hash1)
+    new_block(blocks_agent, transactions_agent, proof1, previous_hash1)
   end
 
   defp invalid_block?(previous_block, current_block) do

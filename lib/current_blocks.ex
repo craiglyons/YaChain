@@ -14,7 +14,7 @@ defmodule Yachain.CurrentBlocks do
   Gets all blocks in the list w/ identity function
   """
   def all(name \\ @name) do
-    Agent.get(name, &(&1))
+    Agent.get(name, & &1)
   end
 
   @doc """
@@ -37,5 +37,4 @@ defmodule Yachain.CurrentBlocks do
   def replace(name \\ @name, list) do
     Agent.update(name, fn current -> list end)
   end
-
 end

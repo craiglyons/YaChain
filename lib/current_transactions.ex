@@ -14,7 +14,7 @@ defmodule Yachain.CurrentTransactions do
   Gets all transactions in the list w/ identity function
   """
   def all(name \\ @name) do
-    Agent.get(name, &(&1))
+    Agent.get(name, & &1)
   end
 
   @doc """
@@ -37,5 +37,4 @@ defmodule Yachain.CurrentTransactions do
   def clear(name \\ @name) do
     Agent.update(name, fn current -> [] end)
   end
-
 end
