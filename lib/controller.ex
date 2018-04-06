@@ -130,9 +130,20 @@ defmodule Yachain.Controller do
   end
 
   def resolve_conflicts() do
-    Node.list()
-    |> Enum.map(Node.spawn(node, &get_chain/0))
+    longest_chain = Node.list()
+    |> Enum.map(fn(node) -> :rpc.call(node, Yachain.Controller, :get_chain, []) end)
     |> longest_chain()
+
+    replace_current_chain? = (longest_chain |> length()) > (get_chain() |> length())
+    case replace_current_chain? do
+      true ->
+        IO.puts("*** Consensus loss, replacing current chain ***")
+        CurrentBlocks.replace(longest_chain)
+        longest_chain
+      _ ->
+        IO.puts("*** Consensus win, keeping current chain ***")
+        get_chain
+    end
   end
 
   def longest_chain(chains) do
@@ -140,5 +151,15 @@ defmodule Yachain.Controller do
     |> Enum.filter(&valid_chain?/1)
     |> Enum.sort(&(length(&1) > length(&2)))
     |> Enum.at(0)
+  end
+
+  def magic_button() do
+    Node.connect(:"bar@localhost")
+    insert_genesis_block()
+    mine()
+    new_transaction("Sender1", "Recipient1", 123.00)
+    new_transaction("Sender2", "Recipient2", 234.00)
+    new_transaction("Sender3", "Recipient3", 345.00)
+    mine()
   end
 end

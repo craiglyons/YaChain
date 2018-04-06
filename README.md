@@ -175,4 +175,27 @@ iex(foo@localhost)11> Controller.get_chain()
 ]
 ```
 
+## Test our length consensus
+
+First, alias the Controller for simplicity on the `bar` node
+
+```
+iex(bar@localhost)1> alias Yachain.Controller
+Yachain.Controller
+```
+
+Insert just the genesis block
+
+```
+iex(bar@localhost)2> Controller.insert_genesis_block
+%Yachain.Block{
+  index: 0,
+  previous_hash: "n/a",
+  proof: 100,
+  timestamp: #DateTime<2018-04-06 01:40:54.967639Z>,
+  transactions: []
+}
+iex(bar@localhost)3>
+```
+
 TODO: Update readme w/ consensus demo
